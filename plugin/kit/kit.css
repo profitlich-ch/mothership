@@ -1,0 +1,134 @@
+/* Grundgerüst für erzeugte Werkzeuge. Wird beim Speichern in jede ui.html eingesetzt. */
+:root {
+  --bg: #323232;
+  --surface: #3e3e3e;
+  --border: #5a5a5a;
+  --text: #e6e6e6;
+  --muted: #a0a0a0;
+  --accent: #4b9cf5;
+  --accent-text: #ffffff;
+  --danger: #ec5b62;
+  --radius: 4px;
+  --gap: 8px;
+}
+
+:root[data-theme="light"] {
+  --bg: #f0f0f0;
+  --surface: #ffffff;
+  --border: #c4c4c4;
+  --text: #2c2c2c;
+  --muted: #6e6e6e;
+  --accent: #1473e6;
+  --accent-text: #ffffff;
+  --danger: #c9252d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 12px/1.4 -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  padding: var(--gap);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 var(--gap);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.btn,
+button {
+  appearance: none;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn:hover,
+button:hover {
+  border-color: var(--text);
+}
+
+.btn.primary,
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input,
+select,
+textarea {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px 6px;
+  font: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+label {
+  color: var(--muted);
+}

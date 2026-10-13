@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="view-shelf" class="view">
+      <div class="head">
+        <img class="logo on-dark" src="icons/skull-dark.svg" alt="" />
+        <img class="logo on-light" src="icons/skull-light.svg" alt="" />
+        <span class="title">AI Pirate</span>
+        <div id="btn-settings" class="ghost">Einstellungen</div>
+      </div>
+
+      <div id="settings" class="box hidden">
+        <span class="label">Claude-API-Key</span>
+        <input id="api-key" type="password" placeholder="sk-ant-…" />
+        <div class="field">
+          <span class="label">Modell</span>
+          <select id="model"></select>
+        </div>
+        <div class="actions">
+          <sp-button id="btn-save-settings" variant="primary">Speichern</sp-button>
+        </div>
+        <div class="label">Werkzeugordner</div>
+        <div id="folder-path" class="path"></div>
+      </div>
+
+      <div id="tool-list" class="list"></div>
+
+      <div class="composer">
+        <textarea id="prompt" placeholder="Welches Werkzeug brauchst Du? Zum Beispiel: Zeige alle Absatzformate als Balken nach Häufigkeit und lass mich eines per Klick im Dokument auswählen."></textarea>
+        <div class="actions">
+          <sp-button id="btn-create" variant="cta">Werkzeug bauen</sp-button>
+        </div>
+      </div>
+      <div id="shelf-status" class="status"></div>
+    </div>
+
+    <div id="view-tool" class="view hidden">
+      <div class="head">
+        <div id="btn-back" class="ghost">‹ Regal</div>
+        <span id="tool-name" class="title"></span>
+        <div id="btn-log" class="ghost">Verlauf</div>
+        <div id="btn-reload" class="ghost">Neu laden</div>
+      </div>
+
+      <div id="stage" class="stage"></div>
+      <div id="log" class="list hidden"></div>
+
+      <div class="composer">
+        <textarea id="change" placeholder="Was soll sich an diesem Werkzeug ändern?"></textarea>
+        <div class="actions">
+          <sp-button id="btn-change" variant="primary">Ändern</sp-button>
+        </div>
+      </div>
+      <div id="tool-status" class="status"></div>
+    </div>
+
+    <script src="index.js"></script>
+  </body>
+</html>
