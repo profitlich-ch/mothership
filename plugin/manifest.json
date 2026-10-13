@@ -47,7 +47,7 @@
       "allowLocalRendering": "yes",
       "enableMessageBridge": "localOnly"
     },
-    "localFileSystem": "plugin",
+    "localFileSystem": "request",
     "allowCodeGenerationFromStrings": true
   },
   "icons": [

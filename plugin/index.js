@@ -203,6 +203,7 @@ async function openTool(id) {
     } catch (error) {
       noteError(`host_js lässt sich nicht laden: ${error.message}`);
     }
+    await tools.stage(id);
     mountWebview(id);
   } catch (error) {
     setStatus("shelf-status", `Das Werkzeug lässt sich nicht öffnen: ${error.message}`, true);
@@ -292,6 +293,23 @@ async function build(request, statusId) {
   }
 }
 
+async function showFolder() {
+  $("folder-path").textContent = await tools.folderPath();
+  $("btn-reset-folder").className = tools.hasCustomFolder() ? "ghost" : "ghost hidden";
+}
+
+/** Zeigt das Regal neu an; ein unerreichbarer Werkzeugordner wird gemeldet statt verschluckt. */
+async function refreshShelf(note) {
+  await showFolder();
+  try {
+    await renderList();
+    setStatus("shelf-status", note);
+  } catch (error) {
+    $("tool-list").innerHTML = "";
+    setStatus("shelf-status", error.message, true);
+  }
+}
+
 async function initSettings() {
   const select = $("model");
   for (const model of claude.MODELS) {
@@ -302,7 +320,7 @@ async function initSettings() {
   }
   select.selectedIndex = claude.MODELS.findIndex((model) => model.id === claude.getModel());
   $("api-key").value = await claude.getApiKey();
-  $("folder-path").textContent = await tools.folderPath();
+  await showFolder();
 
   // Ohne Key ist nichts zu tun: Einstellungen gleich zeigen.
   if (!$("api-key").value) $("settings").className = "box";
@@ -317,6 +335,22 @@ $("btn-save-settings").addEventListener("click", async () => {
   claude.setModel(claude.MODELS[Math.max(0, $("model").selectedIndex)].id);
   $("settings").className = "box hidden";
   setStatus("shelf-status", "Einstellungen gespeichert.");
+});
+
+$("btn-choose-folder").addEventListener("click", async () => {
+  try {
+    const chosen = await tools.chooseFolder();
+    if (!chosen) return;
+    const copied = chosen.copied ? ` ${chosen.copied} bisherige Werkzeuge wurden hineinkopiert.` : "";
+    await refreshShelf(`Die Werkzeuge liegen jetzt in «${chosen.path}».${copied}`);
+  } catch (error) {
+    setStatus("shelf-status", `Der Ordner lässt sich nicht verwenden: ${error.message}`, true);
+  }
+});
+
+$("btn-reset-folder").addEventListener("click", async () => {
+  tools.resetFolder();
+  await refreshShelf("Die Werkzeuge liegen wieder im Datenordner des Plugins. Der bisherige Ordner bleibt unverändert.");
 });
 
 $("btn-create").addEventListener("click", () => build($("prompt").value, "shelf-status"));

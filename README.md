@@ -32,7 +32,19 @@ Das Plugin ist nirgends registriert: Die ID `ch.profitlich.ai-pirate` in `plugin
 2. Wie oben ein neues Paket erzeugen und doppelklicken; es ersetzt die installierte Fassung.
 3. InDesign neu starten.
 
-Die Werkzeuge liegen nicht im Plugin, sondern in dessen Datenordner, und überstehen die Aktualisierung. Der Pfad steht im Bedienfeld unter **Einstellungen → Werkzeugordner**. Das aus dem Ordner geladene und das als Paket installierte Plugin führen je einen eigenen Datenordner.
+Die Werkzeuge liegen nicht im Plugin und überstehen die Aktualisierung; siehe *Werkzeugordner*.
+
+## Werkzeugordner
+
+Ohne weiteres Zutun liegen die Werkzeuge im Datenordner des Plugins. Der ist an diesen Rechner, die InDesign-Hauptversion und die Art der Installation gebunden: Das aus dem Ordner geladene und das als Paket installierte Plugin führen je einen eigenen.
+
+Unter **Einstellungen → Ordner wählen** legst Du die Werkzeuge stattdessen in einen eigenen Ordner, etwa in Google Drive. Das Plugin liest und schreibt dann nur noch dort; den Abgleich zwischen Rechnern übernimmt Google Drive für Desktop. Auf jedem weiteren Rechner wählst Du denselben Ordner.
+
+- Beim Wählen werden die bisherigen Werkzeuge in den neuen Ordner kopiert, soweit sie dort fehlen. Der alte Ort bleibt unverändert.
+- **Standardordner** stellt auf den Datenordner des Plugins zurück, ohne etwas zu kopieren oder zu löschen.
+- Ist der gewählte Ordner nicht erreichbar, meldet das Regal das und bleibt leer, statt still an einem anderen Ort weiterzuarbeiten.
+- Der Ordner sollte in Google Drive «offline verfügbar» sein, sonst fehlen ohne Netz die Werkzeuge, die nur in der Cloud liegen.
+- Der API-Key liegt nie im Werkzeugordner, sondern im sicheren Speicher des jeweiligen Rechners.
 
 ## Benutzen
 
@@ -46,23 +58,25 @@ Die Werkzeuge liegen nicht im Plugin, sondern in dessen Datenordner, und überst
 
 ```txt
 plugin/
-  manifest.json      Berechtigungen: Netz nur zu api.anthropic.com, lokale Webview, Code aus Text
+  manifest.json      Berechtigungen: Netz nur zu api.anthropic.com, lokale Webview, Code aus Text,
+                     Ordnerzugriff nach Auswahl durch den Nutzer
   index.html, .js    Bedienfeld: Regal, Werkzeugansicht, Einstellungen
   src/claude.js      Anfrage an die Claude-API, API-Key im sicheren Speicher von UXP
-  src/tools.js       Werkzeuge im Datenordner lesen, schreiben, löschen
+  src/tools.js       Werkzeuge im Werkzeugordner lesen, schreiben, löschen
   src/host.js        host_js ausführen, Dokument beschreiben
   kit/               Was jedes Werkzeug mitbekommt: Grundgerüst (kit.css), Brücke (bridge.js)
                      und der Anweisungstext für Claude (system-prompt.md)
 ```
 
-Ein Werkzeug ist ein Ordner mit fünf Dateien:
+Ein Werkzeug ist ein Ordner mit vier Dateien:
 
 | Datei | Inhalt |
 | --- | --- |
 | `meta.json` | Name, Beschreibung, Änderungsdatum |
 | `ui.src.html` | Oberfläche, wie Claude sie geliefert hat |
-| `ui.html` | dieselbe Oberfläche mit eingesetztem Grundgerüst und Brücke; sie wird angezeigt |
 | `host.js` | Funktionen mit Zugriff auf das Dokument |
 | `log.json` | alle Aufträge im Wortlaut, mit Zeitpunkt und Tokens |
+
+Beim Öffnen setzt das Plugin Grundgerüst und Brücke in die Oberfläche ein und schreibt das Ergebnis als `ui.html` in seinen Datenordner, weil die Webview nur von dort laden kann. Diese Datei ist ein Zwischenspeicher und wird bei jedem Öffnen neu erzeugt.
 
 Die Oberfläche läuft in einer Webview, also in einem echten Browser ohne Zugriff auf InDesign. Sie ruft über `pirate.read(name, args)` und `pirate.change(name, args)` Funktionen aus `host.js` auf; nur `change` erzeugt einen Rückgängig-Schritt. Was Claude über dieses Format weiss, steht in `plugin/kit/system-prompt.md` – dort wird nachgeschärft, wenn Werkzeuge wiederholt denselben Fehler machen.

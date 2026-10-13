@@ -9,4 +9,5 @@
 - Werkzeuge mit eigener Oberfläche in einer Webview, Dokumentzugriff über die Brücke `pirate.read` und `pirate.change`.
 - Statuszeile mit Phase, Dauer und verbrauchten Tokens während des Bauens.
 - Verlauf je Werkzeug mit allen Aufträgen im Wortlaut.
+- Frei wählbarer Werkzeugordner, etwa in Google Drive, damit Werkzeuge auf mehreren Rechnern verfügbar sind.
 - Gemeinsames Grundgerüst für Werkzeuge, das dem hellen oder dunklen InDesign-Thema folgt.
