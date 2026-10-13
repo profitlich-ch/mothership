@@ -1,6 +1,14 @@
 const indesign = require("indesign");
 
-const { app, ScriptLanguage, UndoModes } = indesign;
+/**
+ * Die InDesign-Anwendung. Sie wird bei jedem Gebrauch frisch geholt: Wird das Plugin beim Start
+ * von InDesign geladen, steht sie zu diesem Zeitpunkt noch nicht bereit.
+ */
+function getApp() {
+  const app = indesign.app || require("indesign").app;
+  if (!app) throw new Error("InDesign ist noch nicht bereit. Lade das Werkzeug in einem Moment neu.");
+  return app;
+}
 
 const MAX_NAMES = 60;
 
@@ -11,7 +19,7 @@ const MAX_NAMES = 60;
  */
 function compile(code) {
   const module = { exports: {} };
-  new Function("module", "exports", "require", "indesign", "app", code)(module, module.exports, require, indesign, app);
+  new Function("module", "exports", "require", "indesign", "app", code)(module, module.exports, require, indesign, getApp());
   return module.exports;
 }
 
@@ -32,14 +40,14 @@ async function run(handlers, mode, name, args, label) {
   let ran = false;
   let result;
   try {
-    app.doScript(
+    getApp().doScript(
       () => {
         ran = true;
         result = handler(args);
       },
-      ScriptLanguage.UXPSCRIPT,
+      indesign.ScriptLanguage.UXPSCRIPT,
       [],
-      UndoModes.ENTIRE_SCRIPT,
+      indesign.UndoModes.ENTIRE_SCRIPT,
       label,
     );
   } catch (error) {
@@ -73,7 +81,8 @@ function attempt(read, fallback) {
  * @returns {string} JSON-Text, oder ein Hinweis, wenn kein Dokument offen ist
  */
 function describeDocument() {
-  if (!attempt(() => app.documents.length, 0)) return "Es ist kein Dokument geöffnet.";
+  if (!attempt(() => getApp().documents.length, 0)) return "Es ist kein Dokument geöffnet.";
+  const app = getApp();
   const doc = app.activeDocument;
   return JSON.stringify(
     {
@@ -106,7 +115,7 @@ function describeDocument() {
  * @returns {"dark"|"light"}
  */
 function theme() {
-  return attempt(() => app.generalPreferences.uiBrightnessPreference, 0) > 0.5 ? "light" : "dark";
+  return attempt(() => getApp().generalPreferences.uiBrightnessPreference, 0) > 0.5 ? "light" : "dark";
 }
 
 module.exports = { compile, run, describeDocument, theme };
