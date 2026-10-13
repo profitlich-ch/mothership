@@ -1,4 +1,5 @@
 const indesign = require("indesign");
+const { t } = require("./i18n.js");
 
 /**
  * Die InDesign-Anwendung. Sie wird bei jedem Gebrauch frisch geholt: Wird das Plugin beim Start
@@ -6,7 +7,7 @@ const indesign = require("indesign");
  */
 function getApp() {
   const app = indesign.app || require("indesign").app;
-  if (!app) throw new Error("InDesign ist noch nicht bereit. Lade das Werkzeug in einem Moment neu.");
+  if (!app) throw new Error(t("notReady"));
   return app;
 }
 
@@ -34,7 +35,7 @@ function compile(code) {
  */
 async function run(handlers, mode, name, args, label) {
   const handler = handlers[name];
-  if (typeof handler !== "function") throw new Error(`Das Werkzeug kennt die Funktion «${name}» nicht.`);
+  if (typeof handler !== "function") throw new Error(t("unknownFunction", { name }));
   if (mode !== "change") return handler(args);
 
   let ran = false;
@@ -62,7 +63,7 @@ async function run(handlers, mode, name, args, label) {
 function names(collection) {
   try {
     const all = [].concat(collection().everyItem().name);
-    return all.length > MAX_NAMES ? all.slice(0, MAX_NAMES).concat(`… (${all.length} insgesamt)`) : all;
+    return all.length > MAX_NAMES ? all.slice(0, MAX_NAMES).concat(`… (${all.length} in total)`) : all;
   } catch (error) {
     return [];
   }
@@ -81,29 +82,29 @@ function attempt(read, fallback) {
  * @returns {string} JSON-Text, oder ein Hinweis, wenn kein Dokument offen ist
  */
 function describeDocument() {
-  if (!attempt(() => getApp().documents.length, 0)) return "Es ist kein Dokument geöffnet.";
+  if (!attempt(() => getApp().documents.length, 0)) return "No document is open.";
   const app = getApp();
   const doc = app.activeDocument;
   return JSON.stringify(
     {
       name: attempt(() => doc.name, ""),
-      seiten: attempt(() => doc.pages.length, null),
-      druckbogen: attempt(() => doc.spreads.length, null),
-      linealeinheit: attempt(() => String(doc.viewPreferences.horizontalMeasurementUnits), null),
-      seitenformat: attempt(
+      pages: attempt(() => doc.pages.length, null),
+      spreads: attempt(() => doc.spreads.length, null),
+      rulerUnits: attempt(() => String(doc.viewPreferences.horizontalMeasurementUnits), null),
+      pageSize: attempt(
         () => [doc.documentPreferences.pageWidth, doc.documentPreferences.pageHeight],
         null,
       ),
-      textabschnitte: attempt(() => doc.stories.length, null),
-      seitenobjekte: attempt(() => doc.allPageItems.length, null),
-      verknuepfungen: attempt(() => doc.links.length, null),
-      ebenen: names(() => doc.layers),
-      absatzformate: names(() => doc.paragraphStyles),
-      zeichenformate: names(() => doc.characterStyles),
-      objektformate: names(() => doc.objectStyles),
-      farbfelder: names(() => doc.swatches),
-      musterseiten: names(() => doc.masterSpreads),
-      auswahl: attempt(() => [].concat(app.selection).map((item) => item.constructor.name), []),
+      stories: attempt(() => doc.stories.length, null),
+      pageItems: attempt(() => doc.allPageItems.length, null),
+      links: attempt(() => doc.links.length, null),
+      layers: names(() => doc.layers),
+      paragraphStyles: names(() => doc.paragraphStyles),
+      characterStyles: names(() => doc.characterStyles),
+      objectStyles: names(() => doc.objectStyles),
+      swatches: names(() => doc.swatches),
+      masterSpreads: names(() => doc.masterSpreads),
+      selection: attempt(() => [].concat(app.selection).map((item) => item.constructor.name), []),
     },
     null,
     1,

@@ -2,15 +2,28 @@ const { entrypoints } = require("uxp");
 const claude = require("./src/claude.js");
 const tools = require("./src/tools.js");
 const host = require("./src/host.js");
+const { language, t } = require("./src/i18n.js");
 
 const MAX_ERRORS = 10;
 
-const PHASES = {
-  wartet: "Claude liest den Auftrag",
-  denkt: "Claude denkt nach",
-  schreibt: "Claude schreibt das Werkzeug",
-  fertig: "Claude ist fertig",
+const PHASES = { waiting: "phaseWaiting", thinking: "phaseThinking", writing: "phaseWriting", done: "phaseDone" };
+
+/** Feste Beschriftungen des Bedienfelds: Element-ID und Textschlüssel. */
+const LABELS = {
+  "btn-settings": "settings",
+  "label-api-key": "apiKey",
+  "label-model": "model",
+  "btn-save-settings": "save",
+  "label-folder": "toolFolder",
+  "btn-reset-folder": "defaultFolder",
+  "btn-choose-folder": "chooseFolder",
+  "btn-create": "build",
+  "btn-back": "shelf",
+  "btn-log": "history",
+  "btn-reload": "reload",
+  "btn-change": "change",
 };
+const PLACEHOLDERS = { prompt: "promptPlaceholder", change: "changePlaceholder" };
 
 function formatTokens(count) {
   return count < 1000 ? String(count) : `${(count / 1000).toFixed(1)}k`;
@@ -29,7 +42,7 @@ let busy = false;
 
 entrypoints.setup({
   panels: {
-    pirate: {
+    main: {
       show() {},
     },
   },
@@ -59,7 +72,7 @@ async function renderList() {
   if (!metas.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = "Noch kein Werkzeug. Beschreibe unten, was Du brauchst.";
+    empty.textContent = t("emptyShelf");
     list.appendChild(empty);
     return;
   }
@@ -76,6 +89,10 @@ async function renderList() {
     const summary = document.createElement("div");
     summary.className = "tool-summary";
     summary.textContent = meta.summary;
+    if (tools.isTooNew(meta)) {
+      row.className = "tool too-new";
+      summary.textContent = t("toolTooNew");
+    }
     text.appendChild(name);
     text.appendChild(summary);
 
@@ -83,15 +100,15 @@ async function renderList() {
 
     const remove = document.createElement("div");
     remove.className = "ghost trash";
-    remove.setAttribute("title", "Werkzeug löschen");
+    remove.setAttribute("title", t("deleteTool"));
     remove.innerHTML =
-      '<img class="on-dark" src="icons/trash-dark.svg" alt="Löschen" /><img class="on-light" src="icons/trash-light.svg" alt="Löschen" />';
+      '<img class="on-dark" src="icons/trash-dark.svg" alt="" /><img class="on-light" src="icons/trash-light.svg" alt="" />';
     const cancel = document.createElement("div");
     cancel.className = "ghost hidden";
-    cancel.textContent = "Abbrechen";
+    cancel.textContent = t("cancel");
     const confirm = document.createElement("div");
     confirm.className = "ghost confirm hidden";
-    confirm.textContent = "Löschen";
+    confirm.textContent = t("delete");
 
     // Der Papierkorb fragt nach, statt zu löschen: UXP kennt kein confirm().
     const ask = (asking) => {
@@ -125,7 +142,9 @@ async function renderList() {
 function formatDate(iso) {
   const date = new Date(iso);
   const two = (number) => String(number).padStart(2, "0");
-  return `${two(date.getDate())}.${two(date.getMonth() + 1)}.${date.getFullYear()} ${two(date.getHours())}:${two(date.getMinutes())}`;
+  const time = `${two(date.getHours())}:${two(date.getMinutes())}`;
+  if (language === "de") return `${two(date.getDate())}.${two(date.getMonth() + 1)}.${date.getFullYear()} ${time}`;
+  return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())} ${time}`;
 }
 
 async function showLog() {
@@ -136,7 +155,7 @@ async function showLog() {
   if (!entries.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = "Zu diesem Werkzeug ist noch kein Auftrag aufgezeichnet.";
+    empty.textContent = t("emptyLog");
     list.appendChild(empty);
   }
   for (const entry of entries) {
@@ -144,7 +163,7 @@ async function showLog() {
     item.className = "log-entry";
     const head = document.createElement("div");
     head.className = "log-head";
-    head.textContent = `${formatDate(entry.at)} · ${entry.kind} · ${tokenLine({ input: entry.input, output: entry.output, exact: true })}`;
+    head.textContent = `${formatDate(entry.at)} · ${t(entry.kind)} · ${tokenLine({ input: entry.input, output: entry.output, exact: true })}`;
     const prompt = document.createElement("div");
     prompt.className = "log-prompt";
     prompt.textContent = entry.prompt;
@@ -157,13 +176,13 @@ async function showLog() {
   $("stage").innerHTML = "";
   $("stage").className = "stage hidden";
   list.className = "list";
-  $("btn-log").textContent = "Werkzeug";
+  $("btn-log").textContent = t("tool");
 }
 
 function hideLog() {
   $("log").className = "list hidden";
   $("stage").className = "stage";
-  $("btn-log").textContent = "Verlauf";
+  $("btn-log").textContent = t("history");
 }
 
 function mountWebview(id) {
@@ -186,7 +205,7 @@ function noteError(text) {
   if (!active) return;
   active.errors.push(text);
   if (active.errors.length > MAX_ERRORS) active.errors.shift();
-  setStatus("tool-status", `${text}\nDer Fehler geht beim nächsten «Ändern» an Claude mit.`, true);
+  setStatus("tool-status", `${text}\n${t("errorGoesAlong")}`, true);
 }
 
 async function openTool(id) {
@@ -201,12 +220,12 @@ async function openTool(id) {
     try {
       active.handlers = host.compile(files.host_js);
     } catch (error) {
-      noteError(`host_js lässt sich nicht laden: ${error.message}`);
+      noteError(t("hostLoadFailed", { detail: error.message }));
     }
     await tools.stage(id);
     mountWebview(id);
   } catch (error) {
-    setStatus("shelf-status", `Das Werkzeug lässt sich nicht öffnen: ${error.message}`, true);
+    setStatus("shelf-status", t("openFailed", { detail: error.message }), true);
   }
 }
 
@@ -226,7 +245,7 @@ async function onMessage(event) {
     return;
   }
   if (message.kind === "error") {
-    noteError(`Oberfläche: ${message.message}`);
+    noteError(t("uiError", { detail: message.message }));
     return;
   }
   if (message.kind === "call") {
@@ -243,17 +262,17 @@ async function onMessage(event) {
 async function build(request, statusId) {
   if (busy) return;
   if (!request.trim()) {
-    setStatus(statusId, "Beschreibe zuerst, was Du brauchst.", true);
+    setStatus(statusId, t("describeFirst"), true);
     return;
   }
   const editing = statusId === "tool-status" ? active : null;
 
   setBusy(true);
   const started = Date.now();
-  let progress = { phase: "wartet", input: 0, output: 0, exact: false };
+  let progress = { phase: "waiting", input: 0, output: 0, exact: false };
   const render = () => {
     const seconds = Math.round((Date.now() - started) / 1000);
-    setStatus(statusId, `${PHASES[progress.phase]} … ${seconds} s · ${tokenLine(progress)}`);
+    setStatus(statusId, `${t(PHASES[progress.phase])} … ${seconds} s · ${tokenLine(progress)}`);
   };
   render();
   // Die Uhr läuft unabhängig vom Datenstrom, damit auch beim Warten sichtbar etwas geschieht.
@@ -264,6 +283,7 @@ async function build(request, statusId) {
         system: await tools.systemPrompt(),
         request,
         context: host.describeDocument(),
+        language,
         current: editing ? editing.files : undefined,
         errors: editing ? editing.errors : undefined,
       },
@@ -284,7 +304,7 @@ async function build(request, statusId) {
     await renderList();
     await openTool(meta.id);
     const seconds = Math.round((Date.now() - started) / 1000);
-    setStatus("tool-status", `Gebaut in ${seconds} s · ${tokenLine(usage)}`);
+    setStatus("tool-status", `${t("built", { seconds })} · ${tokenLine(usage)}`);
   } catch (error) {
     setStatus(statusId, error.message, true);
   } finally {
@@ -315,7 +335,7 @@ async function initSettings() {
   for (const model of claude.MODELS) {
     const option = document.createElement("option");
     option.value = model.id;
-    option.textContent = model.label;
+    option.textContent = model.label();
     select.appendChild(option);
   }
   select.selectedIndex = claude.MODELS.findIndex((model) => model.id === claude.getModel());
@@ -334,23 +354,23 @@ $("btn-save-settings").addEventListener("click", async () => {
   await claude.setApiKey($("api-key").value.trim());
   claude.setModel(claude.MODELS[Math.max(0, $("model").selectedIndex)].id);
   $("settings").className = "box hidden";
-  setStatus("shelf-status", "Einstellungen gespeichert.");
+  setStatus("shelf-status", t("settingsSaved"));
 });
 
 $("btn-choose-folder").addEventListener("click", async () => {
   try {
     const chosen = await tools.chooseFolder();
     if (!chosen) return;
-    const copied = chosen.copied ? ` ${chosen.copied} bisherige Werkzeuge wurden hineinkopiert.` : "";
-    await refreshShelf(`Die Werkzeuge liegen jetzt in «${chosen.path}».${copied}`);
+    const copied = chosen.copied ? ` ${t("folderCopied", { count: chosen.copied })}` : "";
+    await refreshShelf(t("folderNow", { path: chosen.path }) + copied);
   } catch (error) {
-    setStatus("shelf-status", `Der Ordner lässt sich nicht verwenden: ${error.message}`, true);
+    setStatus("shelf-status", t("folderUnusable", { detail: error.message }), true);
   }
 });
 
 $("btn-reset-folder").addEventListener("click", async () => {
   tools.resetFolder();
-  await refreshShelf("Die Werkzeuge liegen wieder im Datenordner des Plugins. Der bisherige Ordner bleibt unverändert.");
+  await refreshShelf(t("folderReset"));
 });
 
 $("btn-create").addEventListener("click", () => build($("prompt").value, "shelf-status"));
@@ -369,6 +389,9 @@ $("btn-back").addEventListener("click", () => {
 });
 
 window.addEventListener("message", onMessage);
+
+for (const id of Object.keys(LABELS)) $(id).textContent = t(LABELS[id]);
+for (const id of Object.keys(PLACEHOLDERS)) $(id).setAttribute("placeholder", t(PLACEHOLDERS[id]));
 
 initSettings().catch((error) => setStatus("shelf-status", error.message, true));
 renderList().catch((error) => setStatus("shelf-status", error.message, true));

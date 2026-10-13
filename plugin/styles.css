@@ -182,6 +182,10 @@ input::placeholder {
   background-color: #3a3a3a;
 }
 
+.too-new {
+  opacity: 0.55;
+}
+
 .trash {
   padding: 4px;
 }

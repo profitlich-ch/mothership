@@ -1,82 +1,93 @@
-# AI Pirate
+# Mothership
 
-Ein InDesign-Bedienfeld, das mit Claude eigene Werkzeuge baut: Du beschreibst, was Du brauchst, und erhältst ein Werkzeug mit grafischer Oberfläche, das Inhalte des Dokuments zeigt und verändert. Werkzeuge bleiben im Regal und lassen sich jederzeit weiter anpassen.
+*The mother of all plugins.*
 
-Läuft ab InDesign 2026 (21.0) als UXP-Plugin. Es braucht einen eigenen Claude-API-Key von [console.anthropic.com](https://console.anthropic.com); abgerechnet wird pro Aufruf über dieses Konto.
+An InDesign panel that uses Claude to build your own tools: you describe what you need and get a tool with a graphical interface that shows and changes content in your document. Tools stay on a shelf and can be refined at any time.
 
-## Installieren
+Runs as a UXP plugin in InDesign 2026 (21.0) and later. The panel is German when InDesign's interface is German and English otherwise. You need your own Claude API key from [console.anthropic.com](https://console.anthropic.com); usage is billed per request to that account.
 
-Es gibt zwei Wege. Zum Ausprobieren und Entwickeln den ersten, für den Alltag den zweiten.
+> **Generated code runs without confirmation.** A tool that Claude builds can change your document as soon as you use it. Work on documents that are saved or backed up.
 
-### Aus dem Ordner laden (Entwicklung)
+## Install
 
-1. In der Creative-Cloud-App unter «Applikationen» das **UXP Developer Tool** installieren und starten. Beim ersten Start verlangt es das Administratorkennwort, um den Entwicklermodus einzuschalten.
-2. InDesign starten.
-3. Im Developer Tool **Add Plugin** wählen und `plugin/manifest.json` aus diesem Ordner öffnen.
-4. In der Zeile «AI Pirate» auf **Load** klicken. Das Bedienfeld erscheint in InDesign; später findest Du es im Menü «Zusatzmodule».
-5. Im Bedienfeld unter **Einstellungen** den API-Key eintragen und speichern.
+There are two ways. Use the first to try the plugin or develop it, the second for daily work.
 
-Ein so geladenes Plugin verschwindet beim Beenden von InDesign und wird nach dem nächsten Start wieder mit **Load** geladen. Nach einer Änderung am Code genügt **Reload** in derselben Zeile; **Debug** öffnet die Konsole mit den Fehlermeldungen.
+### Load from the folder (development)
 
-### Als Paket installieren (Alltag)
+1. In the Creative Cloud app, install the **UXP Developer Tool** and start it. On first launch it asks for the administrator password to enable developer mode.
+2. Start InDesign.
+3. In the Developer Tool, choose **Add Plugin** and open `plugin/manifest.json` from this repository.
+4. Click **Load** in the "Mothership" row. The panel appears in InDesign; later you find it in the Plugins menu.
+5. In the panel, open **Settings**, enter your API key and save.
 
-1. Im Developer Tool in der Zeile «AI Pirate» über das Menü «•••» **Package** wählen. Es entsteht eine `.ccx`-Datei.
-2. Die `.ccx`-Datei doppelklicken. Die Creative-Cloud-App installiert sie und warnt dabei, dass das Plugin nicht aus dem Marketplace stammt.
-3. InDesign neu starten. Das Bedienfeld steht jetzt bei jedem Start im Menü «Zusatzmodule» bereit, ohne Developer Tool.
+A plugin loaded this way disappears when InDesign quits and has to be loaded again with **Load** after the next start. After a code change, **Reload** in the same row is enough; after a change to `manifest.json`, use **Unload** and then **Load**. **Debug** opens the console with error messages.
 
-Das Plugin ist nirgends registriert: Die ID `ch.profitlich.ai-pirate` in `plugin/manifest.json` ist selbst gewählt. Eine ID von Adobe braucht es nur für den Marketplace.
+### Install as a package (daily use)
 
-## Aktualisieren
+1. In the Developer Tool, open the "•••" menu in the "Mothership" row and choose **Package**. This creates a `.ccx` file.
+2. Double-click the `.ccx` file. The Creative Cloud app installs it and warns that the plugin does not come from the Marketplace.
+3. Restart InDesign. The panel is now available in the Plugins menu on every start, without the Developer Tool.
 
-1. `version` in `plugin/manifest.json` erhöhen.
-2. Wie oben ein neues Paket erzeugen und doppelklicken; es ersetzt die installierte Fassung.
-3. InDesign neu starten.
+The plugin is not registered anywhere: the ID `ch.profitlich.mothership` in `plugin/manifest.json` is self-chosen. An ID from Adobe is only required for the Marketplace.
 
-Die Werkzeuge liegen nicht im Plugin und überstehen die Aktualisierung; siehe *Werkzeugordner*.
+## Update
 
-## Werkzeugordner
+1. Increase `version` in `plugin/manifest.json`.
+2. Create a new package as above and double-click it; it replaces the installed version.
+3. Restart InDesign.
 
-Ohne weiteres Zutun liegen die Werkzeuge im Datenordner des Plugins. Der ist an diesen Rechner, die InDesign-Hauptversion und die Art der Installation gebunden: Das aus dem Ordner geladene und das als Paket installierte Plugin führen je einen eigenen.
+Tools are not stored inside the plugin and survive the update; see *Tool folder*.
 
-Unter **Einstellungen → Ordner wählen** legst Du die Werkzeuge stattdessen in einen eigenen Ordner, etwa in Google Drive. Das Plugin liest und schreibt dann nur noch dort; den Abgleich zwischen Rechnern übernimmt Google Drive für Desktop. Auf jedem weiteren Rechner wählst Du denselben Ordner.
+## Tool folder
 
-- Beim Wählen werden die bisherigen Werkzeuge in den neuen Ordner kopiert, soweit sie dort fehlen. Der alte Ort bleibt unverändert.
-- **Standardordner** stellt auf den Datenordner des Plugins zurück, ohne etwas zu kopieren oder zu löschen.
-- Ist der gewählte Ordner nicht erreichbar, meldet das Regal das und bleibt leer, statt still an einem anderen Ort weiterzuarbeiten.
-- Der Ordner sollte in Google Drive «offline verfügbar» sein, sonst fehlen ohne Netz die Werkzeuge, die nur in der Cloud liegen.
-- Der API-Key liegt nie im Werkzeugordner, sondern im sicheren Speicher des jeweiligen Rechners.
+By default, tools are stored in the plugin's data folder. That folder is tied to this computer, the InDesign major version and the kind of installation: the plugin loaded from the folder and the one installed as a package each have their own.
 
-## Benutzen
+With **Settings → Choose folder** you store the tools in a folder of your own instead, for example in Google Drive. The plugin then reads and writes only there, and Google Drive for desktop syncs between computers. On every other computer, choose the same folder.
 
-- **Regal:** Liste der Werkzeuge mit einer von Claude geschriebenen Kurzbeschreibung. Ein Klick auf die Zeile öffnet das Werkzeug, der Papierkorb löscht es nach einer Rückfrage. Unten beschreibst Du ein neues und klickst **Werkzeug bauen**. Claude erhält dazu eine Beschreibung des geöffneten Dokuments (Formate, Ebenen, Farbfelder, Auswahl), aber keinen Inhalt.
-- **Werkzeug:** Die Oberfläche des Werkzeugs füllt das Bedienfeld. Darunter beschreibst Du, was sich ändern soll, und klickst **Ändern**. Fehler, die das Werkzeug im Betrieb meldet, gehen dabei automatisch an Claude mit.
-- **Verlauf:** zeigt alle Aufträge, mit denen das Werkzeug erstellt und geändert wurde, im Wortlaut. Während des Bauens zeigt die Statuszeile Dauer und verbrauchte Tokens.
-- **Rückgängig:** Jede Änderung eines Werkzeugs am Dokument ist ein Schritt im InDesign-Menü «Bearbeiten → Rückgängig».
-- Erzeugter Code wird ohne Rückfrage ausgeführt. Arbeite an Dokumenten, die gesichert sind.
+- When you choose a folder, your existing tools are copied into it unless they are already there. The old location stays unchanged.
+- **Default folder** switches back to the plugin's data folder without copying or deleting anything.
+- If the chosen folder cannot be reached, the shelf says so and stays empty instead of silently working somewhere else.
+- Mark the folder as available offline in Google Drive; otherwise tools that exist only in the cloud are missing when you are offline.
+- The API key is never stored in the tool folder. It stays in the secure storage of each computer.
 
-## Aufbau
+## Use
+
+- **Shelf:** the list of tools, each with a short description written by Claude. Clicking a row opens the tool; the trash icon deletes it after a confirmation. Below the list you describe a new tool and click **Build tool**. Claude receives a description of the open document (styles, layers, swatches, selection) but none of its content.
+- **Tool:** the tool's interface fills the panel. Below it you describe what should change and click **Change**. Errors the tool reported while running are passed to Claude automatically.
+- **History:** shows every request that created or changed the tool, word for word. While a tool is being built, the status line shows the elapsed time and the tokens used.
+- **Undo:** every change a tool makes to the document is one step in InDesign's Edit → Undo.
+- **Language:** new tools are built in the language of the panel. Existing tools keep their language until you ask for a change.
+
+## Structure
 
 ```txt
 plugin/
-  manifest.json      Berechtigungen: Netz nur zu api.anthropic.com, lokale Webview, Code aus Text,
-                     Ordnerzugriff nach Auswahl durch den Nutzer
-  index.html, .js    Bedienfeld: Regal, Werkzeugansicht, Einstellungen
-  src/claude.js      Anfrage an die Claude-API, API-Key im sicheren Speicher von UXP
-  src/tools.js       Werkzeuge im Werkzeugordner lesen, schreiben, löschen
-  src/host.js        host_js ausführen, Dokument beschreiben
-  kit/               Was jedes Werkzeug mitbekommt: Grundgerüst (kit.css), Brücke (bridge.js)
-                     und der Anweisungstext für Claude (system-prompt.md)
+  manifest.json      Permissions: network only to api.anthropic.com, local webview, code from strings,
+                     folder access after the user picks one
+  index.html, .js    Panel: shelf, tool view, settings
+  src/claude.js      Request to the Claude API, API key in UXP secure storage
+  src/tools.js       Read, write and delete tools in the tool folder
+  src/host.js        Run host_js, describe the document
+  src/i18n.js        Interface texts in German and English
+  kit/               What every tool receives: base stylesheet (kit.css), bridge (bridge.js)
+                     and the instructions for Claude (system-prompt.md)
 ```
 
-Ein Werkzeug ist ein Ordner mit vier Dateien:
+A tool is a folder with four files:
 
-| Datei | Inhalt |
+| File | Content |
 | --- | --- |
-| `meta.json` | Name, Beschreibung, Änderungsdatum |
-| `ui.src.html` | Oberfläche, wie Claude sie geliefert hat |
-| `host.js` | Funktionen mit Zugriff auf das Dokument |
-| `log.json` | alle Aufträge im Wortlaut, mit Zeitpunkt und Tokens |
+| `meta.json` | Name, description, date of last change, format number |
+| `ui.src.html` | The interface as Claude delivered it |
+| `host.js` | Functions with access to the document |
+| `log.json` | Every request word for word, with time and tokens |
 
-Beim Öffnen setzt das Plugin Grundgerüst und Brücke in die Oberfläche ein und schreibt das Ergebnis als `ui.html` in seinen Datenordner, weil die Webview nur von dort laden kann. Diese Datei ist ein Zwischenspeicher und wird bei jedem Öffnen neu erzeugt.
+When a tool is opened, the plugin inserts the base stylesheet and the bridge into the interface and writes the result as `ui.html` to its data folder, because the webview can only load from there. That file is a cache and is regenerated on every open.
 
-Die Oberfläche läuft in einer Webview, also in einem echten Browser ohne Zugriff auf InDesign. Sie ruft über `pirate.read(name, args)` und `pirate.change(name, args)` Funktionen aus `host.js` auf; nur `change` erzeugt einen Rückgängig-Schritt. Was Claude über dieses Format weiss, steht in `plugin/kit/system-prompt.md` – dort wird nachgeschärft, wenn Werkzeuge wiederholt denselben Fehler machen.
+The format number says how the tool folder is laid out. When the layout changes, the number in `FORMAT` (`plugin/src/tools.js`) goes up and `UPGRADES` gets one step that converts a folder from the previous number. A tool is upgraded when it is opened, step by step from whatever number it has. A plugin that meets a tool with a higher number than its own shows it greyed out in the shelf and asks for an update instead of opening it, which matters when several computers with different plugin versions share one tool folder.
+
+The interface runs in a webview, a real browser with no access to InDesign. It calls functions from `host.js` through `pirate.read(name, args)` and `pirate.change(name, args)`; only `change` creates an undo step. Everything Claude knows about this format is in `plugin/kit/system-prompt.md`, which is the place to sharpen when tools repeat the same mistake.
+
+## License
+
+[MIT](LICENSE)

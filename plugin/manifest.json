@@ -1,7 +1,7 @@
 {
   "manifestVersion": 5,
-  "id": "ch.profitlich.ai-pirate",
-  "name": "AI Pirate",
+  "id": "ch.profitlich.mothership",
+  "name": "Mothership",
   "version": "0.1.0",
   "main": "index.html",
   "host": {
@@ -11,9 +11,9 @@
   "entrypoints": [
     {
       "type": "panel",
-      "id": "pirate",
+      "id": "main",
       "label": {
-        "default": "AI Pirate"
+        "default": "Mothership"
       },
       "minimumSize": { "width": 240, "height": 320 },
       "maximumSize": { "width": 4000, "height": 4000 },

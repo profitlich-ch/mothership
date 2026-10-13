@@ -1,14 +1,15 @@
 const { storage } = require("uxp");
+const { t } = require("./i18n.js");
 
 const API_URL = "https://api.anthropic.com/v1/messages";
 const KEY_NAME = "anthropic-api-key";
-const MODEL_NAME = "ai-pirate-model";
+const MODEL_NAME = "mothership-model";
 
 /** Wählbare Modelle; das erste ist die Vorgabe. */
 const MODELS = [
-  { id: "claude-opus-5-5", label: "Claude Opus 5.5" },
-  { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5 (schneller, günstiger)" },
-  { id: "claude-fable-5-1", label: "Claude Fable 5.1 (am stärksten, teurer)" },
+  { id: "claude-opus-5-5", label: () => "Claude Opus 5.5" },
+  { id: "claude-sonnet-5-5", label: () => t("modelSonnet", { name: "Claude Sonnet 5.5" }) },
+  { id: "claude-fable-5-1", label: () => t("modelFable", { name: "Claude Fable 5.1" }) },
 ];
 
 const TOOL_SCHEMA = {
@@ -68,10 +69,10 @@ function section(tag, text) {
 
 function failure(status, body) {
   const detail = body && body.error && body.error.message ? ` (${body.error.message})` : "";
-  if (status === 401) return "Der API-Key wurde abgelehnt. Prüfe ihn in den Einstellungen.";
-  if (status === 429) return `Das Limit des API-Kontos ist erreicht. Versuche es in einer Minute erneut.${detail}`;
-  if (status >= 500) return `Die Claude-API ist gerade überlastet oder gestört (${status}). Versuche es erneut.`;
-  return `Die Claude-API hat die Anfrage abgelehnt (${status}).${detail}`;
+  if (status === 401) return t("keyRejected");
+  if (status === 429) return t("rateLimit") + detail;
+  if (status >= 500) return t("overloaded", { status });
+  return t("apiRejected", { status }) + detail;
 }
 
 /**
@@ -79,13 +80,14 @@ function failure(status, body) {
  * @property {string} system Anweisungstext zum Werkzeugformat
  * @property {string} request Auftrag des Nutzers
  * @property {string} context Beschreibung des aktiven Dokuments
+ * @property {"de"|"en"} language Sprache, in der das Werkzeug beschriftet wird
  * @property {{ui_html: string, host_js: string}} [current] bisheriger Code bei einer Änderung
  * @property {string[]} [errors] Fehler, die das Werkzeug zuletzt gemeldet hat
  */
 
 /**
  * @typedef {object} Progress
- * @property {"wartet"|"denkt"|"schreibt"|"fertig"} phase
+ * @property {"waiting"|"thinking"|"writing"|"done"} phase
  * @property {number} input Tokens der Anfrage, 0 solange unbekannt
  * @property {number} output Tokens der Antwort
  * @property {boolean} exact `false`, solange `output` aus der Textlänge geschätzt ist
@@ -94,16 +96,16 @@ function failure(status, body) {
 /** Liest den Ereignisstrom der API und meldet den Fortschritt. */
 function streamReader(onProgress) {
   const state = { buffer: "", text: "", chars: 0, stopReason: null };
-  const progress = { phase: "wartet", input: 0, output: 0, exact: false };
+  const progress = { phase: "waiting", input: 0, output: 0, exact: false };
 
   function handle(event) {
-    if (event.type === "error") throw new Error(`Die Claude-API hat die Antwort abgebrochen: ${event.error.message}`);
+    if (event.type === "error") throw new Error(t("apiAborted", { detail: event.error.message }));
     if (event.type === "message_start") progress.input = event.message.usage.input_tokens || 0;
     if (event.type === "content_block_delta") {
       const delta = event.delta;
       const piece = delta.text || delta.thinking || "";
       if (delta.type === "text_delta") state.text += delta.text;
-      progress.phase = delta.type === "text_delta" ? "schreibt" : "denkt";
+      progress.phase = delta.type === "text_delta" ? "writing" : "thinking";
       state.chars += piece.length;
       // Die genaue Zahl kommt erst am Ende; bis dahin etwa ein Token je 3,5 Zeichen.
       progress.output = Math.round(state.chars / 3.5);
@@ -113,7 +115,7 @@ function streamReader(onProgress) {
       if (event.usage && event.usage.output_tokens) {
         progress.output = event.usage.output_tokens;
         progress.exact = true;
-        progress.phase = "fertig";
+        progress.phase = "done";
       }
     }
     onProgress(Object.assign({}, progress));
@@ -146,14 +148,14 @@ function streamReader(onProgress) {
  */
 async function generate(options, onProgress = () => {}) {
   const apiKey = await getApiKey();
-  if (!apiKey) throw new Error("Es ist kein API-Key hinterlegt. Trage ihn in den Einstellungen ein.");
+  if (!apiKey) throw new Error(t("noKey"));
 
-  const parts = [section("auftrag", options.request), section("dokument", options.context)];
+  const parts = [section("request", options.request), section("document", options.context)];
   if (options.current) {
-    parts.push(section("bisheriges_ui_html", options.current.ui_html));
-    parts.push(section("bisheriges_host_js", options.current.host_js));
+    parts.push(section("current_ui_html", options.current.ui_html));
+    parts.push(section("current_host_js", options.current.host_js));
   }
-  if (options.errors && options.errors.length) parts.push(section("gemeldete_fehler", options.errors.join("\n")));
+  if (options.errors && options.errors.length) parts.push(section("reported_errors", options.errors.join("\n")));
 
   let response;
   try {
@@ -175,12 +177,12 @@ async function generate(options, onProgress = () => {}) {
         // Lehnt ein Sicherheitsfilter die Anfrage ab, beantwortet sie ein Ersatzmodell.
         fallbacks: "default",
         output_config: { effort: "high", format: { type: "json_schema", schema: TOOL_SCHEMA } },
-        system: options.system,
+        system: options.system.replace(/\{\{language\}\}/g, options.language === "de" ? "German" : "English"),
         messages: [{ role: "user", content: parts.join("\n\n") }],
       }),
     });
   } catch (error) {
-    throw new Error(`Die Claude-API ist nicht erreichbar: ${error.message}`);
+    throw new Error(t("apiUnreachable", { detail: error.message }));
   }
 
   if (!response.ok) throw new Error(failure(response.status, await response.json().catch(() => null)));
@@ -201,15 +203,15 @@ async function generate(options, onProgress = () => {}) {
   reader.push("\n\n");
 
   const { stopReason, text } = reader.state;
-  if (stopReason === "refusal") throw new Error("Claude hat diesen Auftrag abgelehnt. Formuliere ihn anders.");
+  if (stopReason === "refusal") throw new Error(t("refusal"));
   if (stopReason === "max_tokens") {
-    throw new Error("Das Werkzeug ist für eine einzelne Antwort zu gross geworden. Teile den Auftrag in kleinere Schritte.");
+    throw new Error(t("tooLarge"));
   }
 
   try {
     return { files: JSON.parse(text), usage: Object.assign({}, reader.progress) };
   } catch (error) {
-    throw new Error("Die Antwort von Claude liess sich nicht lesen. Versuche es erneut.");
+    throw new Error(t("unreadable"));
   }
 }
 

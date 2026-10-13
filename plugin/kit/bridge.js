@@ -50,7 +50,7 @@
   };
 
   window.addEventListener("error", function (event) {
-    send({ kind: "error", message: event.message + " (Zeile " + event.lineno + ")" });
+    send({ kind: "error", message: event.message + " (line " + event.lineno + ")" });
   });
   window.addEventListener("unhandledrejection", function (event) {
     const reason = event.reason;

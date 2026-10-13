@@ -2,12 +2,13 @@
 
 ## [Unreleased]
 
-### Hinzugefügt
+### Added
 
-- Bedienfeld «AI Pirate» mit Regal, Werkzeugansicht und Einstellungen.
-- Werkzeuge per Beschreibung von Claude bauen und ändern lassen; Fehler aus dem Betrieb gehen bei der nächsten Änderung mit.
-- Werkzeuge mit eigener Oberfläche in einer Webview, Dokumentzugriff über die Brücke `pirate.read` und `pirate.change`.
-- Statuszeile mit Phase, Dauer und verbrauchten Tokens während des Bauens.
-- Verlauf je Werkzeug mit allen Aufträgen im Wortlaut.
-- Frei wählbarer Werkzeugordner, etwa in Google Drive, damit Werkzeuge auf mehreren Rechnern verfügbar sind.
-- Gemeinsames Grundgerüst für Werkzeuge, das dem hellen oder dunklen InDesign-Thema folgt.
+- "Mothership" panel with shelf, tool view and settings.
+- Build and change tools by describing them to Claude; errors from a running tool are passed along with the next change.
+- Tools with their own interface in a webview, document access through the `pirate.read` and `pirate.change` bridge.
+- Status line with phase, elapsed time and tokens used while a tool is being built.
+- History per tool with every request word for word.
+- Freely chosen tool folder, for example in Google Drive, so tools are available on several computers.
+- German and English interface, following the language of InDesign; new tools are built in the same language.
+- Shared base stylesheet for tools that follows InDesign's light or dark theme.

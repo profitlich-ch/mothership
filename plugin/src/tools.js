@@ -1,15 +1,40 @@
 const { storage } = require("uxp");
 
+const { t } = require("./i18n.js");
+
 const fs = storage.localFileSystem;
 
-const FOLDER_TOKEN = "ai-pirate-folder-token";
-const FOLDER_PATH = "ai-pirate-folder-path";
+const FOLDER_TOKEN = "mothership-folder-token";
+const FOLDER_PATH = "mothership-folder-path";
 /** Was ein Werkzeug ausmacht; die angezeigte ui.html entsteht daraus beim Öffnen. */
 const TOOL_FILES = ["ui.src.html", "host.js", "log.json", "meta.json"];
 
 /**
+ * Formatnummer, die dieses Plugin schreibt und höchstens lesen kann. Sie steht in jeder meta.json
+ * und steigt, wenn sich der Aufbau eines Werkzeugordners ändert; `UPGRADES` hebt ältere Stände an.
+ */
+const FORMAT = 1;
+
+/** Je Ausgangsformat der Schritt zum nächsten. Werkzeuge ohne Formatnummer gelten als Format 0. */
+const UPGRADES = {
+  // Format 0 speicherte die Art eines Verlaufseintrags als deutsches Wort.
+  0: async (folder) => {
+    const kinds = { erstellt: "created", geändert: "changed" };
+    let entries;
+    try {
+      entries = JSON.parse(await readText(folder, "log.json"));
+    } catch (error) {
+      return;
+    }
+    for (const entry of entries) entry.kind = kinds[entry.kind] || entry.kind;
+    await writeText(folder, "log.json", JSON.stringify(entries, null, 2));
+  },
+};
+
+/**
  * @typedef {object} ToolMeta
  * @property {string} id Ordnername des Werkzeugs
+ * @property {number} [format] Formatnummer des Werkzeugordners; fehlt bei Format 0
  * @property {string} name Anzeigename
  * @property {string} summary Ein Satz zum Zweck
  * @property {string} updated Zeitpunkt der letzten Änderung (ISO)
@@ -43,9 +68,7 @@ async function toolsFolder() {
   try {
     return await fs.getEntryForPersistentToken(token);
   } catch (error) {
-    throw new Error(
-      `Der Werkzeugordner «${localStorage.getItem(FOLDER_PATH)}» ist nicht erreichbar. Prüfe, ob er noch existiert und Google Drive läuft, oder wähle ihn in den Einstellungen neu.`,
-    );
+    throw new Error(t("folderUnreachable", { path: localStorage.getItem(FOLDER_PATH) }));
   }
 }
 
@@ -119,6 +142,25 @@ async function list() {
 }
 
 /**
+ * Ob ein Werkzeug von einer neueren Fassung des Plugins stammt und hier nicht geöffnet werden kann.
+ * @param {ToolMeta} meta
+ * @returns {boolean}
+ */
+function isTooNew(meta) {
+  return (meta.format || 0) > FORMAT;
+}
+
+/** Hebt einen Werkzeugordner schrittweise auf das aktuelle Format. */
+async function upgrade(folder, meta) {
+  let format = meta.format || 0;
+  if (format >= FORMAT) return;
+  for (; format < FORMAT; format += 1) await UPGRADES[format](folder);
+  meta.format = FORMAT;
+  // meta.json zuletzt: Bricht ein Schritt ab, wird beim nächsten Öffnen von vorn angehoben.
+  await writeText(folder, "meta.json", JSON.stringify(meta, null, 2));
+}
+
+/**
  * Lädt ein Werkzeug samt Code.
  * @param {string} id Ordnername des Werkzeugs
  * @returns {Promise<{meta: ToolMeta, files: ToolFiles}>}
@@ -126,6 +168,8 @@ async function list() {
 async function load(id) {
   const folder = await (await toolsFolder()).getEntry(id);
   const meta = JSON.parse(await readText(folder, "meta.json"));
+  if (isTooNew(meta)) throw new Error(t("toolTooNew"));
+  await upgrade(folder, meta);
   return {
     meta,
     files: {
@@ -140,7 +184,7 @@ async function load(id) {
 /**
  * @typedef {object} LogEntry
  * @property {string} at Zeitpunkt (ISO)
- * @property {"erstellt"|"geändert"} kind
+ * @property {"created"|"changed"} kind
  * @property {string} prompt Auftrag im Wortlaut
  * @property {number} input Tokens der Anfrage
  * @property {number} output Tokens der Antwort
@@ -170,6 +214,7 @@ async function log(id) {
 async function save(id, files, request) {
   const meta = {
     id: id || slug(files.name),
+    format: FORMAT,
     name: files.name,
     summary: files.summary,
     updated: new Date().toISOString(),
@@ -180,7 +225,7 @@ async function save(id, files, request) {
   const entries = await log(meta.id);
   entries.push({
     at: meta.updated,
-    kind: id ? "geändert" : "erstellt",
+    kind: id ? "changed" : "created",
     prompt: request.prompt,
     input: request.input,
     output: request.output,
@@ -278,6 +323,8 @@ function resetFolder() {
 }
 
 module.exports = {
+  FORMAT,
+  isTooNew,
   systemPrompt,
   list,
   load,

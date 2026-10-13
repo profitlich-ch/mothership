@@ -9,34 +9,34 @@
       <div class="head">
         <img class="logo on-dark" src="icons/skull-dark.svg" alt="" />
         <img class="logo on-light" src="icons/skull-light.svg" alt="" />
-        <span class="title">AI Pirate</span>
-        <div id="btn-settings" class="ghost">Einstellungen</div>
+        <span class="title">Mothership</span>
+        <div id="btn-settings" class="ghost"></div>
       </div>
 
       <div id="settings" class="box hidden">
-        <span class="label">Claude-API-Key</span>
+        <span id="label-api-key" class="label"></span>
         <input id="api-key" type="password" placeholder="sk-ant-…" />
         <div class="field">
-          <span class="label">Modell</span>
+          <span id="label-model" class="label"></span>
           <select id="model"></select>
         </div>
         <div class="actions">
-          <sp-button id="btn-save-settings" variant="primary">Speichern</sp-button>
+          <sp-button id="btn-save-settings" variant="primary"></sp-button>
         </div>
-        <div class="label">Werkzeugordner</div>
+        <div id="label-folder" class="label"></div>
         <div id="folder-path" class="path"></div>
         <div class="actions">
-          <div id="btn-reset-folder" class="ghost">Standardordner</div>
-          <div id="btn-choose-folder" class="ghost">Ordner wählen</div>
+          <div id="btn-reset-folder" class="ghost"></div>
+          <div id="btn-choose-folder" class="ghost"></div>
         </div>
       </div>
 
       <div id="tool-list" class="list"></div>
 
       <div class="composer">
-        <textarea id="prompt" placeholder="Welches Werkzeug brauchst Du? Zum Beispiel: Zeige alle Absatzformate als Balken nach Häufigkeit und lass mich eines per Klick im Dokument auswählen."></textarea>
+        <textarea id="prompt"></textarea>
         <div class="actions">
-          <sp-button id="btn-create" variant="cta">Werkzeug bauen</sp-button>
+          <sp-button id="btn-create" variant="cta"></sp-button>
         </div>
       </div>
       <div id="shelf-status" class="status"></div>
@@ -44,19 +44,19 @@
 
     <div id="view-tool" class="view hidden">
       <div class="head">
-        <div id="btn-back" class="ghost">‹ Regal</div>
+        <div id="btn-back" class="ghost"></div>
         <span id="tool-name" class="title"></span>
-        <div id="btn-log" class="ghost">Verlauf</div>
-        <div id="btn-reload" class="ghost">Neu laden</div>
+        <div id="btn-log" class="ghost"></div>
+        <div id="btn-reload" class="ghost"></div>
       </div>
 
       <div id="stage" class="stage"></div>
       <div id="log" class="list hidden"></div>
 
       <div class="composer">
-        <textarea id="change" placeholder="Was soll sich an diesem Werkzeug ändern?"></textarea>
+        <textarea id="change"></textarea>
         <div class="actions">
-          <sp-button id="btn-change" variant="primary">Ändern</sp-button>
+          <sp-button id="btn-change" variant="primary"></sp-button>
         </div>
       </div>
       <div id="tool-status" class="status"></div>
